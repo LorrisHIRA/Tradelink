@@ -62,12 +62,13 @@ router.put('/profile/me', requireAuth, async (req, res) => {
 
   try {
     // New profiles start as "pending" until an admin approves them (FR4.1).
-    // Editing an existing profile keeps its current status.
+    // Editing keeps the current status, except a rejected profile goes back to "pending" for another review.
     await pool.query(
       `INSERT INTO profiles (user_id, category_id, location_id, years_experience, bio)
        VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE category_id = VALUES(category_id), location_id = VALUES(location_id),
-                               years_experience = VALUES(years_experience), bio = VALUES(bio)`,
+                               years_experience = VALUES(years_experience), bio = VALUES(bio),
+                               status = IF(status = 'rejected', 'pending', status)`,
       [req.user.userId, categoryId, locationId, years, bio || null]
     );
     res.json({ message: 'Profile saved.' });
