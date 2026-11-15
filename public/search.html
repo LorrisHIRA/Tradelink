@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TradeLink - Find a tradesperson</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header><a class="brand" href="/search.html">TradeLink</a> <small>Find a plumber, electrician, mason or carpenter near you</small></header>
+  <main>
+    <div class="card">
+      <h2>Find a tradesperson</h2>
+      <form id="searchForm">
+        <label for="categoryId">What do you need?</label>
+        <select id="categoryId"><option value="">All trades</option></select>
+
+        <label for="locationId">Where?</label>
+        <select id="locationId"><option value="">All areas</option></select>
+
+        <div class="error" id="err-general"></div>
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <div id="results"></div>
+
+    <p class="cta">Are you a tradesperson? <a href="/register.html">Register for free</a> or <a href="/login.html">log in</a>.</p>
+  </main>
+  <script src="/js/app.js"></script>
+  <script>
+    const resultsBox = document.getElementById('results');
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text == null ? '' : text;
+      return div.innerHTML;
+    }
+
+    function place(r) { return r.sector ? r.district + ' - ' + r.sector : r.district; }
+
+    function renderResults(list) {
+      if (!list.length) {
+        resultsBox.innerHTML = '<p class="empty">No tradespeople found. Try another trade or area.</p>';
+        return;
+      }
+      resultsBox.innerHTML = list.map(r => `
+        <div class="result" id="result-${r.id}">
+          <h3>${escapeHtml(r.fullName)}</h3>
+          <div class="meta">${escapeHtml(r.trade)} &middot; ${escapeHtml(place(r))} &middot; ${r.yearsExperience} year${r.yearsExperience === 1 ? '' : 's'} experience</div>
+          ${r.bio ? '<p>' + escapeHtml(r.bio) + '</p>' : ''}
+          <div id="contact-${r.id}"></div>
+          <button type="button" id="btn-${r.id}" onclick="showContact(${r.id})">View contact</button>
+        </div>`).join('');
+    }
+
+    async function search() {
+      try {
+        const q = new URLSearchParams();
+        const cat = document.getElementById('categoryId').value;
+        const loc = document.getElementById('locationId').value;
+        if (cat) q.set('categoryId', cat);
+        if (loc) q.set('locationId', loc);
+        const data = await api('/search?' + q.toString());
+        document.getElementById('err-general').textContent = '';
+        renderResults(data.results);
+      } catch (err) { showError(err); }
+    }
+
+    async function showContact(id) {
+      try {
+        const p = await api('/profiles/' + id);
+        document.getElementById('contact-' + id).innerHTML =
+          '<div class="contact">Call: <a href="tel:' + escapeHtml(p.phoneNumber) + '">' + escapeHtml(p.phoneNumber) + '</a></div>';
+        document.getElementById('btn-' + id).style.display = 'none';
+      } catch (err) {
+        document.getElementById('contact-' + id).innerHTML = '<div class="error">' + escapeHtml(err.message) + '</div>';
+      }
+    }
+
+    async function init() {
+      try {
+        const lookups = await api('/lookups');
+        lookups.categories.forEach(c => document.getElementById('categoryId').add(new Option(c.name, c.id)));
+        lookups.locations.forEach(l => document.getElementById('locationId').add(new Option(l.sector ? l.district + ' - ' + l.sector : l.district, l.id)));
+      } catch (err) { showError(err); }
+      search();
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', (e) => { e.preventDefault(); search(); });
+    init();
+  </script>
+</body>
+</html>

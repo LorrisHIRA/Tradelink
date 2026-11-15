@@ -47,3 +47,18 @@ button.secondary { background: #fff; color: #1f3a5f; border: 1px solid #1f3a5f; 
 a { color: #1f3a5f; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-top: 18px; }
 .toggle-row input { width: 26px; height: 26px; }
+
+/* ---- Sprint 2: search and admin ---- */
+header a.brand { color: #fff; text-decoration: none; }
+.result { border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-top: 12px; background: #fff; }
+.result h3 { margin: 0 0 4px; font-size: 18px; }
+.result .meta { color: #555; font-size: 14px; margin-bottom: 8px; }
+.result p { margin: 6px 0; font-size: 15px; }
+.result button { margin-top: 10px; padding: 12px; font-size: 16px; }
+.contact { font-size: 20px; font-weight: bold; margin-top: 10px; }
+.contact a { text-decoration: none; }
+.empty { text-align: center; color: #555; padding: 20px 0; }
+.admin-actions { display: flex; gap: 10px; }
+.admin-actions button { margin-top: 10px; }
+button.reject { background: #fff; color: #b00020; border: 1px solid #b00020; }
+.cta { margin-top: 18px; text-align: center; font-size: 15px; }
