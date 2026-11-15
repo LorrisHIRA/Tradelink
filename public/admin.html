@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TradeLink - Review profiles</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header><a class="brand" href="/search.html">TradeLink</a> <small>Admin: review profiles</small></header>
+  <main>
+    <div class="card">
+      <h2>Profiles waiting for review</h2>
+      <div class="error" id="err-general"></div>
+      <div id="list"></div>
+    </div>
+    <p class="switch"><a href="#" onclick="logout(); return false;">Log out</a></p>
+  </main>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!getToken() || localStorage.getItem('tl_role') !== 'admin') window.location.href = '/login.html';
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text == null ? '' : text;
+      return div.innerHTML;
+    }
+
+    async function load() {
+      try {
+        const data = await api('/admin/profiles?status=pending');
+        const list = document.getElementById('list');
+        if (!data.profiles.length) {
+          list.innerHTML = '<p class="empty">No profiles are waiting for review.</p>';
+          return;
+        }
+        list.innerHTML = data.profiles.map(p => `
+          <div class="result">
+            <h3>${escapeHtml(p.fullName)}</h3>
+            <div class="meta">${escapeHtml(p.trade)} &middot; ${escapeHtml(p.sector ? p.district + ' - ' + p.sector : p.district)} &middot; ${p.yearsExperience} yr(s)</div>
+            <p>Phone: ${escapeHtml(p.phoneNumber)}</p>
+            ${p.bio ? '<p>' + escapeHtml(p.bio) + '</p>' : '<p><em>No bio</em></p>'}
+            <div class="admin-actions">
+              <button type="button" onclick="decide(${p.id}, 'approved')">Approve</button>
+              <button type="button" class="reject" onclick="decide(${p.id}, 'rejected')">Reject</button>
+            </div>
+          </div>`).join('');
+      } catch (err) {
+        if (err.status === 401 || err.status === 403) logout(); else showError(err);
+      }
+    }
+
+    async function decide(id, status) {
+      try { await api('/admin/profiles/' + id, 'PATCH', { status }); load(); }
+      catch (err) { showError(err); }
+    }
+
+    load();
+  </script>
+</body>
+</html>
