@@ -1,13 +1,15 @@
 // Small helpers shared by all pages
 
 function getToken() { return localStorage.getItem('tl_token'); }
-function saveSession(token, name) {
+function saveSession(token, name, role) {
   localStorage.setItem('tl_token', token);
   localStorage.setItem('tl_name', name);
+  localStorage.setItem('tl_role', role || 'tradesperson');
 }
 function logout() {
   localStorage.removeItem('tl_token');
   localStorage.removeItem('tl_name');
+  localStorage.removeItem('tl_role');
   window.location.href = '/login.html';
 }
 

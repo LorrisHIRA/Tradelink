@@ -13,6 +13,8 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api', require('./routes/profile'));
+app.use('/api', require('./routes/search'));
+// app.use('/api/admin', require('./routes/admin'));
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`TradeLink running on http://localhost:${port}`));
