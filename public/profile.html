@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TradeLink - My profile</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>TradeLink <small id="welcome"></small></header>
+  <main>
+    <div class="card">
+      <h2>My profile</h2>
+      <div id="statusBox"></div>
+
+      <form id="profileForm" novalidate>
+        <label for="categoryId">Your trade</label>
+        <select id="categoryId"><option value="">Choose a trade</option></select>
+        <div class="error" id="err-categoryId"></div>
+
+        <label for="locationId">Area you work in</label>
+        <select id="locationId"><option value="">Choose an area</option></select>
+        <div class="error" id="err-locationId"></div>
+
+        <label for="yearsExperience">Years of experience</label>
+        <input id="yearsExperience" type="number" min="0" max="60" inputmode="numeric">
+        <div class="error" id="err-yearsExperience"></div>
+
+        <label for="bio">About you (optional)</label>
+        <textarea id="bio" maxlength="500" placeholder="e.g. I fix leaking pipes and install water heaters."></textarea>
+        <div class="error" id="err-bio"></div>
+
+        <div class="error" id="err-general"></div>
+        <button type="submit">Save profile</button>
+      </form>
+
+      <div class="toggle-row" id="availRow" style="display:none">
+        <label for="availability" style="margin:0">I am available for work</label>
+        <input id="availability" type="checkbox">
+      </div>
+    </div>
+    <p class="switch"><a href="#" onclick="logout(); return false;">Log out</a></p>
+  </main>
+  <script src="/js/app.js"></script>
+  <script>
+    if (!getToken()) window.location.href = '/login.html';
+    document.getElementById('welcome').textContent = 'Hello, ' + (localStorage.getItem('tl_name') || '');
+
+    const statusText = {
+      pending: ['wait', 'Your profile is waiting for approval. Clients will see it once it is approved.'],
+      approved: ['ok', 'Your profile is live. Clients can find you.'],
+      rejected: ['bad', 'Your profile was not approved. Please check your details and save again.'],
+    };
+
+    function showStatus(status) {
+      const box = document.getElementById('statusBox');
+      if (!status) { box.innerHTML = ''; return; }
+      const [cls, text] = statusText[status];
+      box.innerHTML = '<div class="notice ' + cls + '">' + text + '</div>';
+    }
+
+    async function load() {
+      try {
+        const lookups = await api('/lookups');
+        lookups.categories.forEach(c => {
+          document.getElementById('categoryId').add(new Option(c.name, c.id));
+        });
+        lookups.locations.forEach(l => {
+          document.getElementById('locationId').add(new Option(l.sector ? l.district + ' - ' + l.sector : l.district, l.id));
+        });
+
+        const me = await api('/profile/me');
+        if (me.profile) {
+          document.getElementById('categoryId').value = me.profile.categoryId;
+          document.getElementById('locationId').value = me.profile.locationId;
+          document.getElementById('yearsExperience').value = me.profile.yearsExperience;
+          document.getElementById('bio').value = me.profile.bio || '';
+          document.getElementById('availability').checked = me.profile.availability;
+          document.getElementById('availRow').style.display = 'flex';
+          showStatus(me.profile.status);
+        }
+      } catch (err) {
+        if (err.status === 401) logout(); else showError(err);
+      }
+    }
+
+    document.getElementById('profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await api('/profile/me', 'PUT', {
+          categoryId: document.getElementById('categoryId').value,
+          locationId: document.getElementById('locationId').value,
+          yearsExperience: document.getElementById('yearsExperience').value,
+          bio: document.getElementById('bio').value,
+        });
+        document.querySelectorAll('.error').forEach(x => (x.textContent = ''));
+        await load();
+      } catch (err) { showError(err); }
+    });
+
+    document.getElementById('availability').addEventListener('change', async (e) => {
+      try { await api('/profile/me/availability', 'PATCH', { availability: e.target.checked }); }
+      catch (err) { e.target.checked = !e.target.checked; showError(err); }
+    });
+
+    load();
+  </script>
+</body>
+</html>

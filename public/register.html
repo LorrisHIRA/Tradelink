@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TradeLink - Register</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>TradeLink <small>Get found by clients near you. Free.</small></header>
+  <main>
+    <div class="card">
+      <h2>Create your account</h2>
+      <form id="regForm" novalidate>
+        <label for="fullName">Full name</label>
+        <input id="fullName" type="text" autocomplete="name">
+        <div class="error" id="err-fullName"></div>
+
+        <label for="phoneNumber">Phone number</label>
+        <input id="phoneNumber" type="tel" placeholder="0788123456" autocomplete="tel">
+        <div class="error" id="err-phoneNumber"></div>
+
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="new-password">
+        <div class="error" id="err-password"></div>
+
+        <div class="error" id="err-general"></div>
+        <button type="submit">Register</button>
+      </form>
+      <p class="switch">Already registered? <a href="/login.html">Log in</a></p>
+    </div>
+  </main>
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('regForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const data = await api('/auth/register', 'POST', {
+          fullName: document.getElementById('fullName').value,
+          phoneNumber: document.getElementById('phoneNumber').value,
+          password: document.getElementById('password').value,
+        });
+        saveSession(data.token, data.fullName);
+        window.location.href = '/profile.html';
+      } catch (err) { showError(err); }
+    });
+  </script>
+</body>
+</html>
