@@ -9,14 +9,23 @@
 <body>
   <header><a class="brand" href="/search.html">TradeLink</a> <small>Find a plumber, electrician, mason or carpenter near you</small></header>
   <main>
-    <div class="card">
-      <h2>Find a tradesperson</h2>
-      <form id="searchForm">
-        <label for="categoryId">What do you need?</label>
-        <select id="categoryId"><option value="">All trades</option></select>
+    <section class="hero">
+      <h1>Find a trusted tradesperson near you</h1>
+      <p>Every profile is reviewed before it goes live. Choose a trade and an area to see who can help.</p>
+    </section>
 
-        <label for="locationId">Where?</label>
-        <select id="locationId"><option value="">All areas</option></select>
+    <div class="card">
+      <form id="searchForm">
+        <div class="filters">
+          <div>
+            <label for="categoryId">What do you need?</label>
+            <select id="categoryId"><option value="">All trades</option></select>
+          </div>
+          <div>
+            <label for="locationId">Where?</label>
+            <select id="locationId"><option value="">All areas</option></select>
+          </div>
+        </div>
 
         <div class="error" id="err-general"></div>
         <button type="submit">Search</button>
@@ -39,18 +48,30 @@
 
     function place(r) { return r.sector ? r.district + ' - ' + r.sector : r.district; }
 
+    function initials(name) {
+      return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w.charAt(0).toUpperCase()).join('');
+    }
+
     function renderResults(list) {
       if (!list.length) {
         resultsBox.innerHTML = '<p class="empty">No tradespeople found. Try another trade or area.</p>';
         return;
       }
-      resultsBox.innerHTML = list.map(r => `
+      resultsBox.innerHTML =
+        '<p class="result-count">' + list.length + ' tradesperson' + (list.length === 1 ? '' : 's') + ' found</p>' +
+        list.map(r => `
         <div class="result" id="result-${r.id}">
-          <h3>${escapeHtml(r.fullName)}</h3>
+          <div class="result-head">
+            <div class="avatar" aria-hidden="true">${escapeHtml(initials(r.fullName))}</div>
+            <div>
+              <h3>${escapeHtml(r.fullName)}</h3>
+              <span class="badge">&#10003; Approved by TradeLink</span>
+            </div>
+          </div>
           <div class="meta">${escapeHtml(r.trade)} &middot; ${escapeHtml(place(r))} &middot; ${r.yearsExperience} year${r.yearsExperience === 1 ? '' : 's'} experience</div>
           ${r.bio ? '<p>' + escapeHtml(r.bio) + '</p>' : ''}
           <div id="contact-${r.id}"></div>
-          <button type="button" id="btn-${r.id}" onclick="showContact(${r.id})">View contact</button>
+          <button type="button" id="btn-${r.id}" onclick="showContact(${r.id})">Show phone number</button>
         </div>`).join('');
     }
 
