@@ -40,11 +40,13 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ field: 'phoneNumber', error: 'This phone number is already registered.' });
 
     const hash = await bcrypt.hash(password, 10);
+    // CHANGED: RETURNING user_id asks PostgreSQL for the new user's ID
     const [result] = await pool.query(
-      'INSERT INTO users (full_name, phone_number, password_hash) VALUES (?, ?, ?)',
+      'INSERT INTO users (full_name, phone_number, password_hash) VALUES (?, ?, ?) RETURNING user_id',
       [fullName.trim(), phone, hash]
     );
-    const token = makeToken({ user_id: result.insertId, role: 'tradesperson' });
+    // CHANGED: the ID now comes from result.rows[0].user_id
+    const token = makeToken({ user_id: result.rows[0].user_id, role: 'tradesperson' });
     res.status(201).json({ token, fullName: fullName.trim() });
   } catch (err) {
     console.error(err);
