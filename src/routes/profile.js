@@ -63,17 +63,22 @@ router.put('/profile/me', requireAuth, async (req, res) => {
   try {
     // New profiles start as "pending" until an admin approves them (FR4.1).
     // Editing keeps the current status, except a rejected profile goes back to "pending" for another review.
+    // CHANGED: PostgreSQL uses ON CONFLICT instead of MySQL's ON DUPLICATE KEY UPDATE
     await pool.query(
       `INSERT INTO profiles (user_id, category_id, location_id, years_experience, bio)
        VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE category_id = VALUES(category_id), location_id = VALUES(location_id),
-                               years_experience = VALUES(years_experience), bio = VALUES(bio),
-                               status = IF(status = 'rejected', 'pending', status)`,
+       ON CONFLICT (user_id) DO UPDATE SET
+         category_id = EXCLUDED.category_id,
+         location_id = EXCLUDED.location_id,
+         years_experience = EXCLUDED.years_experience,
+         bio = EXCLUDED.bio,
+         status = CASE WHEN profiles.status = 'rejected' THEN 'pending' ELSE profiles.status END`,
       [req.user.userId, categoryId, locationId, years, bio || null]
     );
     res.json({ message: 'Profile saved.' });
   } catch (err) {
-    if (err.code === 'ER_NO_REFERENCED_ROW_2')
+    // CHANGED: 23503 is PostgreSQL's "foreign key violation" code
+    if (err.code === '23503')
       return res.status(400).json({ error: 'Invalid trade or area selected.' });
     console.error(err);
     res.status(500).json({ error: 'Could not save your profile.' });
